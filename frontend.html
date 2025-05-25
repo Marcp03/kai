@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Observatorio de Violencia Hacia las Personas LGBTI+ de Honduras KAI+</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #6a3093, #a044ff);
+    color: #fff;
+    min-height: 100vh;
+  }
+
+  header {
+    background: rgba(0,0,0,0.25);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  }
+
+  header h1 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 2rem;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 2rem auto 4rem;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 15px;
+    padding: 2rem 2rem 3rem;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+  }
+
+  section {
+    margin-bottom: 3rem;
+  }
+
+  section h2 {
+    font-weight: 600;
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid #a044ff;
+    padding-bottom: 0.25rem;
+    max-width: max-content;
+    color: #f3b7ff;
+  }
+
+  section p.description {
+    font-weight: 300;
+    font-size: 1rem;
+    color: #e0cdf9;
+    margin-bottom: 1.25rem;
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  #loadingText {
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    color: #ddd;
+  }
+
+  .errorMessage {
+    color: #ff6b6b;
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1rem 1rem;
+    font-size: 0.9rem;
+    color: #ddd;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.15);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    main {
+      margin: 1rem 1rem 3rem;
+      padding: 1.5rem 1.5rem 2.5rem;
+    }
+
+    section h2 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Observatorio de Violencia Hacia las Personas LGBTI+ de Honduras <br> KAI+</h1>
+</header>
+<main>
+  <p id="loadingText">Cargando datos...</p>
+
+  <section id="violencia-generalizada">
+    <h2>Violencia Generalizada</h2>
+    <p class="description">Estadísticas históricas y por período relacionadas con violencia generalizada hacia personas LGBTI+ en Honduras.</p>
+    <div class="chart-container">
+      <canvas id="vgHistoricalChart"></canvas>
+    </div>
+    <div class="chart-container" style="margin-top: 2rem;">
+      <canvas id="vgPeriodChart"></canvas>
+    </div>
+    <div id="vgError" class="errorMessage" style="display:none;"></div>
+  </section>
+
+  <section id="muertes-violentas">
+    <h2>Muertes Violentas</h2>
+    <p class="description">Datos históricos y por período sobre muertes violentas de personas LGBTI+ en Honduras.</p>
+    <div class="chart-container">
+      <canvas id="mvHistoricalChart"></canvas>
+    </div>
+    <div class="chart-container" style="margin-top: 2rem;">
+      <canvas id="mvPeriodChart"></canvas>
+    </div>
+    <div id="mvError" class="errorMessage" style="display:none;"></div>
+  </section>
+
+  <section id="personas-desaparecidas">
+    <h2>Personas Desaparecidas</h2>
+    <p class="description">Registro histórico y por períodos de personas LGBTI+ desaparecidas en Honduras.</p>
+    <div class="chart-container">
+      <canvas id="pdHistoricalChart"></canvas>
+    </div>
+    <div class="chart-container" style="margin-top: 2rem;">
+      <canvas id="pdPeriodChart"></canvas>
+    </div>
+    <div id="pdError" class="errorMessage" style="display:none;"></div>
+  </section>
+
+  <section id="asistencia-refugiadas">
+    <h2>Asistencia a Personas Refugiadas en el Extranjero</h2>
+    <p class="description">Información histórica y por período sobre la asistencia brindada a personas refugiadas LGBTI+ en el extranjero.</p>
+    <div class="chart-container">
+      <canvas id="arHistoricalChart"></canvas>
+    </div>
+    <div class="chart-container" style="margin-top: 2rem;">
+      <canvas id="arPeriodChart"></canvas>
+    </div>
+    <div id="arError" class="errorMessage" style="display:none;"></div>
+  </section>
+</main>
+<footer>
+  &copy; 2025 Observatorio de Violencia Hacia las Personas LGBTI+ de Honduras KAI+ | MP Studio | Datos dinámicos desde API
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // API base URL - adjust this URL if backend deployed elsewhere
+  const API_BASE = 'https://observatorio-lgbti-backend.onrender.com/api';
+
+  // Chart instances storage
+  const charts = {};
+
+  // Create bar chart helper
+  function createBarChart(ctx, labels, data, label, color) {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: label,
+          data: data,
+          backgroundColor: color,
+          borderRadius: 6,
+          maxBarThickness: 40,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: {color: 'white', font: {weight:'600', size:14} }, position: 'top' },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'white' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+          },
+          x: {
+            ticks: { color: 'white' },
+            grid: { color: 'rgba(255,255,255,0.2)' },
+          }
+        }
+      }
+    });
+  }
+
+  // Fetch and update charts for a category
+  async function loadCategory(categoryKey, selectors, colors, errorSelector) {
+    try {
+      const res = await fetch(`${API_BASE}/${categoryKey}`);
+      if (!res.ok) throw new Error('Error al obtener datos: ' + res.status);
+      const json = await res.json();
+
+      // Parse historical
+      const histLabels = json.historical.map(e => e.year);
+      const histData = json.historical.map(e => e.value);
+
+      // Parse periods
+      const periodLabels = json.periods.map(e => e.period);
+      const periodData = json.periods.map(e => e.value);
+
+      // Destroy previous charts if exists
+      if (charts[selectors.historical]) charts[selectors.historical].destroy();
+      if (charts[selectors.period]) charts[selectors.period].destroy();
+
+      charts[selectors.historical] = createBarChart(
+        document.getElementById(selectors.historical).getContext('2d'),
+        histLabels,
+        histData,
+        `Histórico`,
+        colors.historical
+      );
+
+      charts[selectors.period] = createBarChart(
+        document.getElementById(selectors.period).getContext('2d'),
+        periodLabels,
+        periodData,
+        `Por Período`,
+        colors.period
+      );
+
+      // Hide error
+      document.getElementById(errorSelector).style.display = 'none';
+
+    } catch (error) {
+      console.error(error);
+      const errDiv = document.getElementById(errorSelector);
+      errDiv.textContent = 'Error cargando datos: ' + error.message;
+      errDiv.style.display = 'block';
+    }
+  }
+
+  async function loadAllData() {
+    document.getElementById('loadingText').textContent = 'Cargando estadísticas...';
+
+    await Promise.all([
+      loadCategory('violencia-generalizada', 
+        { historical: 'vgHistoricalChart', period: 'vgPeriodChart' }, 
+        { historical: '#da70d6', period: '#ba55d3' }, 
+        'vgError'),
+      loadCategory('muertes-violentas', 
+        { historical: 'mvHistoricalChart', period: 'mvPeriodChart' }, 
+        { historical: '#ff6b6b', period: '#fa5252' },
+        'mvError'),
+      loadCategory('personas-desaparecidas', 
+        { historical: 'pdHistoricalChart', period: 'pdPeriodChart' }, 
+        { historical: '#48dbfb', period: '#38b6ff' },
+        'pdError'),
+      loadCategory('asistencia-refugiadas', 
+        { historical: 'arHistoricalChart', period: 'arPeriodChart' }, 
+        { historical: '#1dd1a1', period: '#10ac84' },
+        'arError'),
+    ]);
+
+    document.getElementById('loadingText').style.display = 'none';
+  }
+
+  window.addEventListener('DOMContentLoaded', loadAllData);
+</script>
+</body>
+</html>
+
