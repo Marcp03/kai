@@ -21,5 +21,5 @@ Repositorio completo con backend API en Node.js y frontend HTML para mostrar est
 1. Clona el repositorio:
 
 ```bash
-git clone https://github.com/tu-usuario/observatorio-lgbti-honduras.git
+git clone https://github.com/tu-usuario/ Observatorio de Violencia Hacia las Personas LGBTI+ de Honduras KAI+.git
 cd observatorio-lgbti-honduras
